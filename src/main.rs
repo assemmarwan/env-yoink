@@ -1,17 +1,15 @@
 use std::collections::HashSet;
 use std::error::Error;
-use std::fs::File;
-use std::{fs, io};
-use std::io::BufReader;
+use std::fs;
 use std::path::{Path, PathBuf};
+
 use clap::{arg, Parser};
 use grep::matcher::Matcher;
-use walkdir::{DirEntry, WalkDir};
-use grep::regex::{RegexCaptures, RegexMatcher, RegexMatcherBuilder};
+use grep::regex::RegexMatcher;
 use grep::searcher::Searcher;
 use grep::searcher::sinks::UTF8;
-use regex::{escape, Regex};
-
+use regex::Regex;
+use walkdir::{DirEntry, WalkDir};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -74,10 +72,6 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-fn is_file(entry: &DirEntry) -> bool {
-    entry.metadata().unwrap().is_file()
-}
-
 fn list_files(directory: &String) -> Vec<DirEntry> {
     let mut files = Vec::new();
     if !directory_exists(directory) {
@@ -108,7 +102,7 @@ fn extract_env_variables(pattern: String, dir: &DirEntry) -> Result<Vec<String>,
     let re = Regex::new(pattern.as_str()).unwrap();
 
 
-    searcher.search_path(&matcher, dir.path(), UTF8(|lnum, line| {
+    searcher.search_path(&matcher, dir.path(), UTF8(|_lnum, line| {
         let mymatches = matcher.find(line.as_bytes())?.unwrap();
         if let Some(capture) = re.captures(&line[mymatches]) {
             let extracted_text = capture.get(1).unwrap().as_str().trim().to_string();
