@@ -4,6 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use clap::{arg, Parser};
+use clap::clap_derive::*;
 use grep::matcher::Matcher;
 use grep::regex::RegexMatcher;
 use grep::searcher::Searcher;
@@ -11,16 +12,30 @@ use grep::searcher::sinks::UTF8;
 use regex::Regex;
 use walkdir::{DirEntry, WalkDir};
 
-#[derive(Parser, Debug)]
+#[derive(Debug, Clone, ValueEnum)]
+#[value(rename_all = "kebab-case")]
+enum Preset {
+    JS,
+    Python,
+    Rust,
+    Go,
+}
+
+
+#[derive(Debug, Clone, ValueEnum)]
+#[value(rename_all = "kebab-case")]
+enum Mode {
+    Regex,
+    Preset,
+}
+
+
+#[derive(Debug, Parser)]
 #[command(
 about = "Tool to grab (yoink) env variables from a workspace into env example file",
-version = env ! ("CARGO_PKG_VERSION")
+version = env!("CARGO_PKG_VERSION")
 )]
-struct Args {
-    /// Env capture pattern
-    #[arg(short = 'p', long = "pattern", help = "Pattern to capture env variables ")]
-    env_capture_pattern: String,
-
+struct Cli {
     /// Output Directory
     #[arg(short = 'o', long = "out", default_value = "./")]
     output_directory: String,
@@ -32,21 +47,43 @@ struct Args {
     /// Workspace Directory
     #[arg(short = 'd', long, default_value = "./")]
     workspace_directory: String,
+
+    #[arg(short, long)]
+    mode: Mode,
+
+    #[arg(short, long, required_if_eq("mode", "regex"))]
+    regex_pattern: Option<String>,
+
+    #[arg(short, long, required_if_eq("mode", "preset"))]
+    preset: Option<Preset>,
 }
 
+
 fn main() {
-    let args = Args::parse();
-    let env_capture_pattern = args.env_capture_pattern;
+    let args = Cli::parse();
+
+
     let output_directory = args.output_directory;
     let example_file_name = args.example_file_name;
     let workspace_directory = args.workspace_directory;
-
+    let mode = args.mode;
+    let regex_pattern = args.regex_pattern;
+    let preset = args.preset;
 
     let files = list_files(&workspace_directory);
-    let mut env_variables = vec![];
-    for file in files {
-        env_variables.extend(extract_env_variables(env_capture_pattern.clone(), &file).unwrap());
-    }
+
+    let regex = match mode {
+        Mode::Regex => match regex_pattern {
+            Some(value) => value,
+            None => panic!("Invalid Regex")
+        },
+        Mode::Preset => match preset {
+            Some(value) => get_preset_regex_pattern(value),
+            None => panic!("Invalid Preset")
+        },
+    };
+
+    let mut env_variables = fetch_env_variables(&files, regex);
 
     let unique_env_variables: HashSet<String> = env_variables.into_iter().collect();
 
@@ -59,6 +96,14 @@ fn main() {
     path.extend(&[example_file_name]);
 
     fs::write(path, output).expect("Failed to write to file....");
+}
+
+fn fetch_env_variables(files: &Vec<DirEntry>, regex_pattern: String) -> Vec<String> {
+    let mut env_variables = vec![];
+    for file in files {
+        env_variables.extend(extract_env_variables(regex_pattern.clone(), &file).unwrap());
+    }
+    return env_variables;
 }
 
 fn directory_exists(directory: &String) -> bool {
@@ -116,4 +161,17 @@ fn extract_env_variables(pattern: String, dir: &DirEntry) -> Result<Vec<String>,
 }
 
 
+fn print_command_args(args: Cli) {
+    todo!("Print the arguments in a pretty fashion")
+}
 
+
+fn get_preset_regex_pattern(preset: Preset) -> String {
+    // TODO: Handle a set of Regex Pattern
+    match preset {
+        Preset::JS => String::from(r"process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
+        Preset::Go => String::from(""),
+        Preset::Python => String::from(""),
+        Preset::Rust => String::from(""),
+    }
+}
