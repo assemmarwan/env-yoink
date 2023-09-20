@@ -173,8 +173,9 @@ fn get_preset_regex_pattern(preset: Preset) -> Vec<String> {
     match preset {
         Preset::JS => vec![String::from(r"process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
                            String::from(r#"process\.env\[['"]([^'"]+)['"]\]"#)],
-        Preset::Go => vec![String::from("")],
-        Preset::Python => vec![String::from("")],
-        Preset::Rust => vec![String::from("")],
+        Preset::Go => vec![String::from(r#"os\.Getenv\(["']([^"']+)["']\)"#)],
+        Preset::Python => vec![String::from(r#"os\.environ\[['"]([^'"]+)['"]\]"#),
+                               String::from(r#"os\.environ\.get\(['"]([^'"]+)['"]\)"#)],
+        Preset::Rust => vec![String::from(r#"env::var\(["']([^"']+)["']\)"#)],
     }
 }
