@@ -62,7 +62,6 @@ struct Cli {
 fn main() {
     let args = Cli::parse();
 
-
     let output_directory = args.output_directory;
     let example_file_name = args.example_file_name;
     let workspace_directory = args.workspace_directory;
@@ -72,9 +71,9 @@ fn main() {
 
     let files = list_files(&workspace_directory);
 
-    let regex = match mode {
+    let regex_sets = match mode {
         Mode::Regex => match regex_pattern {
-            Some(value) => value,
+            Some(value) => vec![value],
             None => panic!("Invalid Regex")
         },
         Mode::Preset => match preset {
@@ -83,7 +82,11 @@ fn main() {
         },
     };
 
-    let mut env_variables = fetch_env_variables(&files, regex);
+    let mut env_variables: Vec<String> = Vec::new();
+
+    for regex in regex_sets {
+        env_variables.extend(fetch_env_variables(&files, regex));
+    }
 
     let unique_env_variables: HashSet<String> = env_variables.into_iter().collect();
 
@@ -99,7 +102,7 @@ fn main() {
 }
 
 fn fetch_env_variables(files: &Vec<DirEntry>, regex_pattern: String) -> Vec<String> {
-    let mut env_variables = vec![];
+    let mut env_variables: Vec<String> = Vec::new();
     for file in files {
         env_variables.extend(extract_env_variables(regex_pattern.clone(), &file).unwrap());
     }
@@ -166,12 +169,12 @@ fn print_command_args(args: Cli) {
 }
 
 
-fn get_preset_regex_pattern(preset: Preset) -> String {
-    // TODO: Handle a set of Regex Pattern
+fn get_preset_regex_pattern(preset: Preset) -> Vec<String> {
     match preset {
-        Preset::JS => String::from(r"process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
-        Preset::Go => String::from(""),
-        Preset::Python => String::from(""),
-        Preset::Rust => String::from(""),
+        Preset::JS => vec![String::from(r"process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
+                           String::from(r#"process\.env\[['"]([^'"]+)['"]\]"#)],
+        Preset::Go => vec![String::from("")],
+        Preset::Python => vec![String::from("")],
+        Preset::Rust => vec![String::from("")],
     }
 }
