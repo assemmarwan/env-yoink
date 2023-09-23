@@ -9,7 +9,7 @@ env-yoink is a Rust CLI tool for effortless extraction of environment variables 
 homepage = "https://github.com/assemmarwan/env-yoink"
 documentation = "https://github.com/assemmarwan/env-yoink"
 repository = "https://github.com/assemmarwan/env-yoink"
-readme = "https://github.com/assemmarwan/env-yoink"
+readme = "README.md"
 
 keywords = ["env", "dotenv", "regex", "grep", "ripgrep"]
 categories = ["development-tools", "command-line-utilities"]
