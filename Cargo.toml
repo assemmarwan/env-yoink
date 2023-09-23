@@ -10,6 +10,7 @@ homepage = "https://github.com/assemmarwan/env-yoink"
 documentation = "https://github.com/assemmarwan/env-yoink"
 repository = "https://github.com/assemmarwan/env-yoink"
 readme = "README.md"
+authors = ["Assem Marwan <assem905@gmail.com>"]
 
 keywords = ["env", "dotenv", "regex", "grep", "ripgrep"]
 categories = ["development-tools", "command-line-utilities"]
