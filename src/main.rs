@@ -3,12 +3,12 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use clap::{arg, Parser};
 use clap::clap_derive::*;
+use clap::{arg, Parser};
 use grep::matcher::Matcher;
 use grep::regex::RegexMatcher;
-use grep::searcher::Searcher;
 use grep::searcher::sinks::UTF8;
+use grep::searcher::Searcher;
 use regex::Regex;
 use walkdir::{DirEntry, WalkDir};
 
@@ -21,14 +21,12 @@ enum Preset {
     Go,
 }
 
-
 #[derive(Debug, Clone, ValueEnum)]
 #[value(rename_all = "kebab-case")]
 enum Mode {
     Regex,
     Preset,
 }
-
 
 #[derive(Debug, Parser)]
 #[command(
@@ -58,7 +56,6 @@ struct Cli {
     preset: Option<Preset>,
 }
 
-
 fn main() {
     let args = Cli::parse();
 
@@ -74,11 +71,11 @@ fn main() {
     let regex_sets = match mode {
         Mode::Regex => match regex_pattern {
             Some(value) => vec![value],
-            None => panic!("Invalid Regex")
+            None => panic!("Invalid Regex"),
         },
         Mode::Preset => match preset {
             Some(value) => get_preset_regex_pattern(value),
-            None => panic!("Invalid Preset")
+            None => panic!("Invalid Preset"),
         },
     };
 
@@ -114,7 +111,8 @@ fn directory_exists(directory: &String) -> bool {
 }
 
 fn is_hidden(entry: &DirEntry) -> bool {
-    entry.file_name()
+    entry
+        .file_name()
         .to_str()
         .map(|s| s.starts_with("."))
         .unwrap_or(false)
@@ -130,7 +128,6 @@ fn list_files(directory: &String) -> Vec<DirEntry> {
         .filter_entry(|file| !is_hidden(file))
         .filter_map(|file| file.ok());
 
-
     for file in walker {
         if file.metadata().unwrap().is_file() {
             files.push(file);
@@ -143,39 +140,43 @@ fn list_files(directory: &String) -> Vec<DirEntry> {
 fn extract_env_variables(pattern: String, dir: &DirEntry) -> Result<Vec<String>, Box<dyn Error>> {
     let matcher = RegexMatcher::new(pattern.as_str())?;
 
-
     let mut matches = vec![];
 
     let mut searcher = Searcher::new();
     let re = Regex::new(pattern.as_str()).unwrap();
 
+    searcher.search_path(
+        &matcher,
+        dir.path(),
+        UTF8(|_lnum, line| {
+            let mymatches = matcher.find(line.as_bytes())?.unwrap();
+            if let Some(capture) = re.captures(&line[mymatches]) {
+                let extracted_text = capture.get(1).unwrap().as_str().trim().to_string();
+                matches.push(extracted_text);
+            }
 
-    searcher.search_path(&matcher, dir.path(), UTF8(|_lnum, line| {
-        let mymatches = matcher.find(line.as_bytes())?.unwrap();
-        if let Some(capture) = re.captures(&line[mymatches]) {
-            let extracted_text = capture.get(1).unwrap().as_str().trim().to_string();
-            matches.push(extracted_text);
-        }
-
-        Ok(true)
-    }))?;
+            Ok(true)
+        }),
+    )?;
 
     Ok(matches)
 }
-
 
 fn print_command_args(args: Cli) {
     todo!("Print the arguments in a pretty fashion")
 }
 
-
 fn get_preset_regex_pattern(preset: Preset) -> Vec<String> {
     match preset {
-        Preset::JS => vec![String::from(r"process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
-                           String::from(r#"process\.env\[['"]([^'"]+)['"]\]"#)],
+        Preset::JS => vec![
+            String::from(r"process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
+            String::from(r#"process\.env\[['"]([^'"]+)['"]\]"#),
+        ],
         Preset::Go => vec![String::from(r#"os\.Getenv\(["']([^"']+)["']\)"#)],
-        Preset::Python => vec![String::from(r#"os\.environ\[['"]([^'"]+)['"]\]"#),
-                               String::from(r#"os\.environ\.get\(['"]([^'"]+)['"]\)"#)],
+        Preset::Python => vec![
+            String::from(r#"os\.environ\[['"]([^'"]+)['"]\]"#),
+            String::from(r#"os\.environ\.get\(['"]([^'"]+)['"]\)"#),
+        ],
         Preset::Rust => vec![String::from(r#"env::var\(["']([^"']+)["']\)"#)],
     }
 }
