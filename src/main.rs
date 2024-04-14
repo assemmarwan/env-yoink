@@ -34,6 +34,10 @@ about = "Tool to grab (yoink) env variables from a workspace into env example fi
 version = env!("CARGO_PKG_VERSION")
 )]
 struct Cli {
+    /// Workspace Directory
+    #[arg()]
+    workspace_directory: String,
+
     /// Output Directory
     #[arg(short = 'o', long = "out", default_value = "./")]
     output_directory: String,
@@ -41,10 +45,6 @@ struct Cli {
     /// Env example file
     #[arg(short = 'e', long, default_value = ".env.example")]
     example_file_name: String,
-
-    /// Workspace Directory
-    #[arg(short = 'd', long, default_value = "./")]
-    workspace_directory: String,
 
     #[arg(short, long)]
     mode: Mode,
