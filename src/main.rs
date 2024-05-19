@@ -21,13 +21,6 @@ enum Preset {
     Go,
 }
 
-#[derive(Debug, Clone, ValueEnum)]
-#[value(rename_all = "kebab-case")]
-enum Mode {
-    Regex,
-    Preset,
-}
-
 #[derive(Debug, Parser)]
 #[command(
 about = "Tool to grab (yoink) env variables from a workspace into env example file",
@@ -46,13 +39,22 @@ struct Cli {
     #[arg(short = 'e', long, default_value = ".env.example")]
     example_file_name: String,
 
-    #[arg(short, long)]
-    mode: Mode,
-
-    #[arg(short, long, required_if_eq("mode", "regex"))]
+    /// Custom Regex pattern to capture the env variables
+    #[arg(
+        short = 'x',
+        long,
+        required_unless_present("preset"),
+        conflicts_with = "preset"
+    )]
     regex_pattern: Option<String>,
 
-    #[arg(short, long, required_if_eq("mode", "preset"))]
+    /// Use from the list of regex presets based on the language
+    #[arg(
+        short = 'p',
+        long,
+        required_unless_present("regex_pattern"),
+        conflicts_with = "regex_pattern"
+    )]
     preset: Option<Preset>,
 }
 
@@ -62,21 +64,15 @@ fn main() {
     let output_directory = args.output_directory;
     let example_file_name = args.example_file_name;
     let workspace_directory = args.workspace_directory;
-    let mode = args.mode;
     let regex_pattern = args.regex_pattern;
     let preset = args.preset;
 
     let files = list_files(&workspace_directory);
 
-    let regex_sets = match mode {
-        Mode::Regex => match regex_pattern {
-            Some(value) => vec![value],
-            None => panic!("Invalid Regex"),
-        },
-        Mode::Preset => match preset {
-            Some(value) => get_preset_regex_pattern(value),
-            None => panic!("Invalid Preset"),
-        },
+    let regex_sets = if regex_pattern.is_some() {
+        vec![regex_pattern.unwrap()]
+    } else {
+        get_preset_regex_pattern(preset.expect("No preset selected!"))
     };
 
     let mut env_variables: Vec<String> = Vec::new();
