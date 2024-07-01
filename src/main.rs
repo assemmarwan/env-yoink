@@ -158,10 +158,6 @@ fn extract_env_variables(pattern: String, dir: &DirEntry) -> Result<Vec<String>,
     Ok(matches)
 }
 
-fn print_command_args(args: Cli) {
-    todo!("Print the arguments in a pretty fashion")
-}
-
 fn get_preset_regex_pattern(preset: Preset) -> Vec<String> {
     match preset {
         Preset::JS => vec![
