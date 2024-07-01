@@ -1,7 +1,19 @@
 [package]
 name = "env-yoink"
-version = "0.1.0"
+version = "0.1.0-beta.0"
 edition = "2021"
+license = "MIT"
+description = """
+env-yoink is a Rust CLI tool for effortless extraction of environment variables from source code, supporting regex and language presets.
+"""
+homepage = "https://github.com/assemmarwan/env-yoink"
+documentation = "https://github.com/assemmarwan/env-yoink"
+repository = "https://github.com/assemmarwan/env-yoink"
+readme = "README.md"
+authors = ["Assem Marwan <assem905@gmail.com>"]
+
+keywords = ["env", "dotenv", "regex", "grep", "ripgrep"]
+categories = ["development-tools", "command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
