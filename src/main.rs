@@ -9,8 +9,8 @@ use grep::matcher::Matcher;
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::Searcher;
+use ignore::{DirEntry, Walk};
 use regex::Regex;
-use walkdir::{DirEntry, WalkDir};
 
 #[derive(Debug, Clone, ValueEnum)]
 #[value(rename_all = "kebab-case")]
@@ -106,27 +106,25 @@ fn directory_exists(directory: &String) -> bool {
     return Path::new(directory.as_str()).is_dir();
 }
 
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with("."))
-        .unwrap_or(false)
-}
-
 fn list_files(directory: &String) -> Vec<DirEntry> {
     let mut files = Vec::new();
     if !directory_exists(directory) {
         eprintln!("Directory {} not found", directory);
     }
-    let walker = WalkDir::new(directory)
-        .into_iter()
-        .filter_entry(|file| !is_hidden(file))
-        .filter_map(|file| file.ok());
 
-    for file in walker {
-        if file.metadata().unwrap().is_file() {
-            files.push(file);
+    let walker = Walk::new(directory);
+
+    for result in walker {
+        match result {
+            Ok(entry) => match entry.metadata() {
+                Ok(metadata) => {
+                    if metadata.is_file() {
+                        files.push(entry)
+                    }
+                }
+                Err(_) => {}
+            },
+            Err(err) => println!("ERROR {}", err),
         }
     }
 
