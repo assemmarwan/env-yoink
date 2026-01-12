@@ -159,8 +159,13 @@ fn extract_env_variables(pattern: String, dir: &DirEntry) -> Result<Vec<String>,
 fn get_preset_regex_pattern(preset: Preset) -> Vec<String> {
     match preset {
         Preset::JS => vec![
+            // Generic JS environments
             String::from(r"process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
             String::from(r#"process\.env\[['"]([^'"]+)['"]\]"#),
+            // Deno specific
+            String::from(r#"Deno\.env\.get\(['"]([^'"]+)['"]\)"#),
+            // Bun specific
+            String::from(r"Bun\.env\.([a-zA-Z_][a-zA-Z0-9_]*)\b"),
         ],
         Preset::Go => vec![String::from(r#"os\.Getenv\(["']([^"']+)["']\)"#)],
         Preset::Python => vec![
